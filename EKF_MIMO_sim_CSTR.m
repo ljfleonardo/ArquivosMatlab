@@ -166,8 +166,6 @@ x_pred_vect(5,:)      = d_estimado(2);
 
 %---- Parâmetros do Estimador ----   
 Q = diag([1*ones(1,na-2),1,1]);               %Variável da ponderação dos estados
-% Q = 0.1*Q;
-% Q = diag([1 1]);
 R = diag(ones(1,m));                          %Variável da ponderação da saída                    
 P_estimado_at = diag([1*ones(1,na-2),1,1]);   
 
@@ -242,13 +240,13 @@ for k = 2+delay_total:iteracoes
     %Compila vetor de saídas e perturbações
     xd = [saidas(:,k-1)' perturbacoes(:,k-1)']; 
     
-    %Compila as entradas atrasadas reais
+    %Compila as entradas com atraso real
     entrada_atrasada_real = [entradas(1,k-1-delay_real(1)) entradas(2,k-1-delay_real(2)) entradas(3,k-1-delay_real(3))]';
     
-    %Compila as entradas atrasadas modeladas
+    %Compila as entradas com atraso modelado
     entrada_atrasada_mod  = [entradas(1,k-1-delay_modelado(1)) entradas(2,k-1-delay_modelado(2)) entradas(3,k-1-delay_modelado(3))]';
 
-%     entradas_ruidosas = entradas_comp + ruido(k);
+%     entrada_atrasada_real_ruido = entrada_atrasada_real + ruido(k);
     
     %---- Simulação do processo ----
     saidas(:,k) = modeloCSTR_naoIsotermico(xd,entrada_atrasada_real);
@@ -273,17 +271,17 @@ for k = 2+delay_total:iteracoes
         for kk=1:dmodelado_max
             %Com atrasos diferentes, o indice k-delay+kk-1 ultrapassa o número de iterações
             %Tratamento das entradas
-            if(k-delay_modelado(1)+kk-1>k) %entradas(1,k-1-delay_modelado(1))
-                entradas(1,k-1-delay_modelado(1)+kk) = entradas(1,k-delay_modelado(1)+kk-1-1);
+            if(k-1-delay_modelado(1)+kk>k) %entradas(1,k-1-delay_modelado(1))
+                entradas(1,k-1-delay_modelado(1)+kk) = entradas(1,k-1-delay_modelado(1)+kk-1);
             end
-            if(k-delay_modelado(2)+kk-1>k)
-                entradas(2,k-delay_modelado(2)+kk-1) = entradas(2,k-delay_modelado(2)+kk-1-1);
+            if(k-1-delay_modelado(2)+kk>k)
+                entradas(2,k-1-delay_modelado(2)+kk) = entradas(2,k-1-delay_modelado(2)+kk-1);
             end
-            if(k-delay_modelado(3)+kk-1>k)
-                entradas(3,k-delay_modelado(3)+kk-1) = entradas(3,k-delay_modelado(3)+kk-1-1);
+            if(k-1-delay_modelado(3)+kk>k)
+                entradas(3,k-1-delay_modelado(3)+kk) = entradas(3,k-1-delay_modelado(3)+kk-1);
             end
             x_a_pred = modeloCSTR_naoIsotermico([x_a_pred(1:3);x_a_estim(4);x_a_estim(5)]',...
-                                                [entradas(1,k-delay_modelado(1)+kk-1) entradas(2,k-delay_modelado(2)+kk-1) entradas(3,k-delay_modelado(3)+kk-1)]')';
+                                                [entradas(1,k-1-delay_modelado(1)+kk) entradas(2,k-1-delay_modelado(2)+kk) entradas(3,k-1-delay_modelado(3)+kk)]')';
         end
     end
     x_a_pred = [x_a_pred(1:3);x_a_estim(4);x_a_estim(5)]'; %Compila estados e perturbações preditas em um vetor
