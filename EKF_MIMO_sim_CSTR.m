@@ -215,7 +215,8 @@ integrador_atual_2 = 0;
 integrador_anterior_3 = integrador_anterior(3);
 integrador_atual_3 = 0;
 end
-%Variável para fechar a malha; 0 = malha aberta; 1 = malha fechada
+
+%Variável para fechar a malha de controle; 0 = malha aberta; 1 = malha fechada
 controle = 1;
 
 %% --------------- Definição das referências ---------------
