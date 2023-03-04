@@ -14,9 +14,9 @@ u3 = SX.sym('u3');
 qi = SX.sym('qi');
 Ti = SX.sym('Ti');
 
-delay_real     = [0 5 0];
-delay_modelado = delay_real;
-% delay_modelado = [0 4 0];
+delay_real     = [3 3 3];
+delay_modelado = delay_real + 2;
+% delay_modelado = [5 5 5];
 d_max          = max(delay_real);
 dmodelado_max  = max(delay_modelado);
 delay_total    = d_max+dmodelado_max;
@@ -197,8 +197,8 @@ sistema = ss(A_exp,B_exp,C_exp,D_exp,Ts);                            %Sistema ex
 
 Co = ctrb(sistema.A,sistema.B);                                      %Matriz de Controlabilidade
 rank(Co);
-Q_lqr = diag([1,1,1,1,1,1]);                                          %Matrizes de ponderação
-R_lqr = 10*eye(size(sistema.B,2));
+Q_lqr = diag([1,1,1/400^2,1,1,1/400^2]);                             %Matrizes de ponderação
+R_lqr = 30*diag([1/0.005^2,1/5^2,1/0.75^2]);
 [K,P,poles] = dlqr(sistema.A,sistema.B,Q_lqr,R_lqr);                 %Ganho do controlador via dlqr
 
 %---- Inicializa integrador no ponto de operação ---- 
@@ -222,11 +222,11 @@ controle = 1;
 %% --------------- Definição das referências ---------------
 if controle == 1 % --- MALHA FECHADA ---
     
-%     ref_h(200:end)     = saidas(1,1)*1.02;          
+    ref_h(200:end)     = saidas(1,1)*1.02;          
     ref_ca(400:end)    = saidas(2,1)*1.02;            
     ref_T(600:end)     = saidas(3,1)*1.02;
-%     perturbacoes(1,100:end)      = q0(1)*1.02;    
-%     perturbacoes(2,600:end)      = q0(2)*1.02;
+    perturbacoes(1,100:end)      = q0(1)*1.02;    
+    perturbacoes(2,600:end)      = q0(2)*1.02;
 
 else % --- MALHA ABERTA ---
     entradas(2,400:end) = u0(2)*1.02;               %Degrau na entrada de 2%
