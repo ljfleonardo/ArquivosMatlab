@@ -3,7 +3,8 @@
 % x2 = Ca - Concentração de saída do produto A;
 % x3 = T - Temperatura dentro do reator; 
 % x4 = R - Velocidade de reação?
-figure
+h = figure();
+h.WindowState = 'maximized';
 tamLetra = 10;
 tamTitulo = 12;
 subplot(3,2,1);
@@ -72,10 +73,11 @@ legend({'${Qh}/{pc_p}$  Taxa de remo\c{c}\~{a}o de calor normalizada'},'interpre
 xlabel('Iterações [-]','FontSize',tamLetra);
 grid
 
-figure
+h2 = figure();
+h2.WindowState = 'maximized';
 %----- Perturbações ------
-% q = qi - vazao de entrada ?; 
-% Ti = Ti - Temeratura externa ?;
+% q = qi - vazao de entrada; 
+% Ti = Ti - Temeratura externa;
 subplot(2,1,1)
 plot(perturbacoes(1,1:iteracoes),'r','linewidth',2);
 hold on
