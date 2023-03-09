@@ -14,9 +14,10 @@ u3 = SX.sym('u3');
 qi = SX.sym('qi');
 Ti = SX.sym('Ti');
 
-delay_real     = [3 3 3];
-delay_modelado = delay_real + 2;
-% delay_modelado = [5 5 5];
+d = 5;
+delay_real     = [d d d];
+delay_modelado = delay_real;
+% delay_modelado = [3 5 3];
 d_max          = max(delay_real);
 dmodelado_max  = max(delay_modelado);
 delay_total    = d_max+dmodelado_max;
@@ -51,9 +52,7 @@ q0  = [qi0; Ti0];
 % Saídas
 h0  = 1;
 Ca0 = 1;
-% Ca0 = 1.000000000069293;
 T0 = 400;
-% T0  = 3.999999999965353e+02;
 
 x0  = [h0; Ca0; T0];
 
@@ -61,7 +60,6 @@ x0  = [h0; Ca0; T0];
 % x1 = h - nível dentro do tanque; 
 % x2 = Ca - Concentração de saída do produto A;
 % x3 = T  - Temperatura dentro do reator; 
-% x4 = R  - Velocidade de reação
 
 %Entradas / Variáveis Manipuladas
 % u1 = q0     - Vazão de saída;
@@ -80,19 +78,6 @@ Rt = (k0*exp(-ER/x3));
 dx1_discreto = x1 + Ts*((qi-u1)/Ac);
 dx2_discreto = x2 + Ts*(qi*((u2-x2)/V) - Rt*x2);
 dx3_discreto = x3 + Ts*(qi*((Ti-x3)/V) - (dH/p/cp)*Rt*x2 - u3/V);
-
-
-%     tspan = [0 Ts];
-%     [t, xfun] = ode45(@(t,x) odefcn(t, x, entradas), tspan, estados);
-%     
-%     x = xfun(end,:)';
-
-% tspan = [0 Ts];
-% x_q_0 = [x0;q0];
-
-% [t,dx]=ode45(@(t,dx) odefcn(t,dx,u0),tspan,x_q_0);
-
-% dx1_discreto = dx(1);
 
 fun_ax_ext = [dx1_discreto;dx2_discreto;dx3_discreto;qi;Ti];     %Sistema aumentado discreto
 fun_x      = Function('fun_x',{x1,x2,x3,qi,Ti,u1,u2,u3},{fun_ax_ext});
@@ -166,7 +151,7 @@ x_pred_vect(5,:)      = d_estimado(2);
 
 %---- Parâmetros do Estimador ----   
 Q = diag([1*ones(1,na-2),1,1]);               %Variável da ponderação dos estados
-R = diag(ones(1,m));                          %Variável da ponderação da saída                    
+R = 1e-1*diag(ones(1,m));                     %Variável da ponderação da saída                    
 P_estimado_at = diag([1*ones(1,na-2),1,1]);   
 
 %---- Funções CasADi ----
@@ -222,16 +207,18 @@ controle = 1;
 %% --------------- Definição das referências ---------------
 if controle == 1 % --- MALHA FECHADA ---
     
-    ref_h(200:end)     = saidas(1,1)*1.02;          
-    ref_ca(400:end)    = saidas(2,1)*1.02;            
-    ref_T(600:end)     = saidas(3,1)*1.02;
-    perturbacoes(1,100:end)      = q0(1)*1.02;    
-    perturbacoes(2,600:end)      = q0(2)*1.02;
+%     ref_h(200:end)     = saidas(1,1)*1.02;          
+    ref_ca(200:end)    = saidas(2,1)*1.02;            
+%     ref_T(600:end)     = saidas(3,1)*1.02;
+%     perturbacoes(1,100:end)      = q0(1)*1.02;    
+    perturbacoes(2,500:end)      = q0(2)*1.02;
 
 else % --- MALHA ABERTA ---
-    entradas(2,400:end) = u0(2)*1.02;               %Degrau na entrada de 2%
-%     entradas(1,200:end) = u0(1)*1.02;             
-%     entradas(3,700:end) = u0(3)*1.02;            
+    entradas(2,600:end) = u0(2)*1.02;               %Degrau na entrada de 2%
+%     entradas(1,200:end) = u0(1)*0.98;             
+%     entradas(3,500:end) = u0(3)*0.98;    
+%     perturbacoes(1,100:end)      = q0(1)*1.02;    
+%     perturbacoes(2,700:end)      = q0(2)*1.02;
 end
 
 %% --------------- Simulação --------------------
@@ -264,15 +251,13 @@ for k = 2+delay_total:iteracoes
                                      entrada_atrasada_mod,x_a_estim,P_estimado_at,Aa,Ca,Q,R);
 
     %---- Predição ----
-    
     %Primeira iteração
     x_a_pred = x_a_estim;   
     if(dmodelado_max>0)
        %Segunda iteração em diante:
         for kk=1:dmodelado_max
-            %Com atrasos diferentes, o indice k-delay+kk-1 ultrapassa o número de iterações
             %Tratamento das entradas
-            if(k-1-delay_modelado(1)+kk>k) %entradas(1,k-1-delay_modelado(1))
+            if(k-1-delay_modelado(1)+kk>k) 
                 entradas(1,k-1-delay_modelado(1)+kk) = entradas(1,k-1-delay_modelado(1)+kk-1);
             end
             if(k-1-delay_modelado(2)+kk>k)
@@ -320,7 +305,7 @@ disp('Tempo gasto na simulação:');
 disp(Elapsed_time);
 
 %---- Plot de gráficos ----
-plot_cstrNaoIsotermico
+%plot_cstrNaoIsotermico
 %% Função do modelo
 
 function dxdt = odefcn(t, estados, entradas)
