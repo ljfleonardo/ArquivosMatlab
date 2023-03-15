@@ -16,7 +16,7 @@ Ti = SX.sym('Ti');
 
 d = 5;
 delay_real     = [d d d];
-delay_modelado = delay_real;
+delay_modelado = delay_real+10;
 % delay_modelado = [3 5 3];
 d_max          = max(delay_real);
 dmodelado_max  = max(delay_modelado);
@@ -150,9 +150,29 @@ x_pred_vect(4,:)      = d_estimado(1);
 x_pred_vect(5,:)      = d_estimado(2);
 
 %---- Parâmetros do Estimador ----   
-Q = diag([1*ones(1,na-2),1,1]);               %Variável da ponderação dos estados
-R = 1e-1*diag(ones(1,m));                     %Variável da ponderação da saída                    
-P_estimado_at = diag([1*ones(1,na-2),1,1]);   
+%h - nível dentro do tanque (0~2); Ca - Concentração de saída do produto A (1~3); T  - Temperatura dentro do reator (390~410); 
+%qi - Vazão de entrada(0.001~0.007); %Ti - Temperatura externa(350~370);
+h_range = [0 2]; Ca_range = [1 3]; T_range = [390 410]; qi_range = [0.001 0.007]; Ti_range = [350 370];
+h_med=mean(h_range); Ca_med=mean(Ca_range); T_med=mean(T_range); qi_med=mean(qi_range); Ti_med=mean(Ti_range);
+h_dp=std(h_range); Ca_dp=std(Ca_range); T_dp=std(T_range); qi_dp=std(qi_range); Ti_dp=std(Ti_range);
+
+% Q = diag([1*ones(1,na-2),1,1]);               %Variável da ponderação dos estados
+% R = diag(ones(1,m));                          %Variável da ponderação da saída       
+P_estimado_at = diag([1*ones(1,na-2),1,1]); 
+
+%Normalização = xi-media/desvio
+% x1_norm = (1-h_med)/h_dp;
+% x2_norm = (1-Ca_med)/Ca_dp;
+% x3_norm = (400-T_med)/T_dp;
+% d1_norm = (0.005-qi_med)/qi_dp;
+% d2_norm = (350-Ti_med)/Ti_dp;
+
+% Q = diag([h_dp^2, Ca_dp^2, T_dp^2, qi_dp^2, Ti_dp^2]);
+% R = diag([((h_dp*0.9)^2), ((Ca_dp*1.5)^2), ((T_dp*0.9)^2)]);
+
+% Testes
+Q = diag([(h_dp*0.7)^2, (Ca_dp*0.25)^2, (T_dp*0.3)^2, (qi_dp*300)^2, (Ti_dp*0.45)^2]);
+R = diag([((h_dp*8)^2), ((Ca_dp*2)^2), ((T_dp*4)^2)]);
 
 %---- Funções CasADi ----
 A_jacobian = jacobian(fun_ax_ext,[x1 x2 x3 qi Ti]);  %Cálculo do jacobiano para matriz A
@@ -208,13 +228,13 @@ controle = 1;
 if controle == 1 % --- MALHA FECHADA ---
     
 %     ref_h(200:end)     = saidas(1,1)*1.02;          
-    ref_ca(200:end)    = saidas(2,1)*1.02;            
+    ref_ca(100:end)    = saidas(2,1)*1.02;            
 %     ref_T(600:end)     = saidas(3,1)*1.02;
-%     perturbacoes(1,100:end)      = q0(1)*1.02;    
-    perturbacoes(2,500:end)      = q0(2)*1.02;
+    perturbacoes(1,200:end)      = q0(1)*1.02;    
+    perturbacoes(2,400:end)      = q0(2)*1.02;
 
 else % --- MALHA ABERTA ---
-    entradas(2,600:end) = u0(2)*1.02;               %Degrau na entrada de 2%
+%     entradas(2,600:end) = u0(2)*1.02;               %Degrau na entrada de 2%
 %     entradas(1,200:end) = u0(1)*0.98;             
 %     entradas(3,500:end) = u0(3)*0.98;    
 %     perturbacoes(1,100:end)      = q0(1)*1.02;    
@@ -270,6 +290,7 @@ for k = 2+delay_total:iteracoes
                                                 [entradas(1,k-1-delay_modelado(1)+kk) entradas(2,k-1-delay_modelado(2)+kk) entradas(3,k-1-delay_modelado(3)+kk)]')';
         end
     end
+    
     x_a_pred = [x_a_pred(1:3);x_a_estim(4);x_a_estim(5)]'; %Compila estados e perturbações preditas em um vetor
     
     %---- Controle ----
@@ -305,7 +326,7 @@ disp('Tempo gasto na simulação:');
 disp(Elapsed_time);
 
 %---- Plot de gráficos ----
-%plot_cstrNaoIsotermico
+plot_cstrNaoIsotermico
 %% Função do modelo
 
 function dxdt = odefcn(t, estados, entradas)
