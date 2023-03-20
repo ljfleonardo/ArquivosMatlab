@@ -10,13 +10,14 @@ espes = 3;
 h = figure();
 h.WindowState = 'maximized';
 
-
 subplot(3,2,1);
 plot(saidas(1,1:iteracoes),'r','linewidth',espes);
 hold on
 plot(ref_h(1:iteracoes),'b--','linewidth',espes);
 plot(x_pred_vect(1,1:iteracoes),'k--','linewidth',espes);
 legend({'Real','Referência','Predição'},'FontSize',tamLetra);
+xlim([0 900])
+ylim([0.92 1.2])
 xlabel('Iterações (-)','FontSize',tamLetra);
 ylabel('Altura (m)','FontSize',tamLetra);
 title('$h$ - Altura do tanque','interpreter','latex','FontSize',tamTitulo)
@@ -29,6 +30,8 @@ hold on
 plot(ref_ca(1:iteracoes),'b--','linewidth',espes);
 plot(x_pred_vect(2,1:iteracoes),'k--','linewidth',espes)%,'marker','x');
 legend({'Real','Referência','Predição'},'Location','best','FontSize',tamLetra);
+xlim([0 900])
+ylim([0.98 1.08])
 xlabel('Iterações (-)','FontSize',tamLetra);
 ylabel('Concentração (kmol/m^3)','FontSize',tamLetra);
 title('$C_a$ - Concentra\c{c}\~{a}o do produto A','interpreter','latex','FontSize',tamTitulo);
@@ -41,6 +44,8 @@ hold on
 plot(ref_T(1:iteracoes),'b--','linewidth',espes);
 plot(x_pred_vect(3,1:iteracoes),'k--','linewidth',espes);
 legend({'Real','Referência','Predição'},'Location','best','FontSize',tamLetra);
+xlim([0 900])
+ylim([390 410])
 xlabel('Iterações (-)','FontSize',tamLetra);
 ylabel('Temperatura Interna (K)','FontSize',tamLetra);
 title('$T$ - Temperatura dentro do tanque','interpreter','latex','FontSize',tamTitulo);
@@ -55,6 +60,10 @@ grid
 subplot(3,2,2);
 % plot(entradas_atrasadas_vect(1,1:iteracoes),'k--','linewidth',2);
 % hold on
+ax=gca;
+xlim([0 900])
+ylim([5e-3 5.2e-3])
+ax.YAxis.Exponent = -3;
 % plot(entradas_comp_vect(1,1:iteracoes),'b','linewidth',2);
 plot(entradas(1,1:iteracoes),'r','linewidth',espes);
 title('Entradas','FontSize',tamTitulo)
@@ -69,6 +78,8 @@ subplot(3,2,4);
 % plot(entradas_comp_vect(2,1:iteracoes),'b','linewidth',2);
 plot(entradas(2,1:iteracoes),'r','linewidth',espes);
 legend({'$C_{af}$ - Concentra\c{c}\~{a}o produto A na alimenta\c{c}\~{a}o do tanque'},'interpreter','latex','Location','best','FontSize',tamLetra);
+xlim([0 900])
+ylim([4.9 5.2])
 xlabel('Iterações (-)','FontSize',tamLetra);
 ylabel('Concentração (kmol/m^3)','FontSize',tamLetra)
 grid
@@ -79,6 +90,8 @@ subplot(3,2,6);
 % plot(entradas_comp_vect(3,1:iteracoes),'b','linewidth',2);
 plot(entradas(3,1:iteracoes),'r','linewidth',espes);
 legend({'${Qh}/{pc_p}$ - Taxa de remo\c{c}\~{a}o de calor normalizada'},'interpreter','latex','Location','best','FontSize',tamLetra);
+xlim([0 900])
+ylim([0.74 0.8])
 xlabel('Iterações (-)','FontSize',tamLetra);
 ylabel({'Taxa de remoção de'; 'calor (Km^3/s^{-1})'},'FontSize',tamLetra)
 grid
@@ -95,6 +108,14 @@ hold on
 plot(x_pred_vect(4,1:iteracoes),'k--','linewidth',espes);
 title('$q_i$ - Vaz\~{a}o de entrada','interpreter','latex','FontSize',tamTitulo);
 legend({'Real','Predição'},'Location','best','FontSize',tamLetra);
+ax=gca;
+xlim([0 900])
+if max(perturbacoes(1,:))>5e-3
+   ylim([4.9e-3 5.2e-3])
+else
+   ylim([4.8e-3 5.1e-3])
+end
+ax.YAxis.Exponent = -3;
 ylabel('Vazão (m^3/s^{-1})','FontSize',tamLetra)
 xlabel('Iterações (-)','FontSize',tamLetra);
 grid
@@ -106,6 +127,13 @@ hold on
 plot(x_pred_vect(5,1:iteracoes),'k--','linewidth',espes);
 title('$T_i$ - Temperatura externa','interpreter','latex','FontSize',tamTitulo)
 legend({'Real','Predição'},'Location','best','FontSize',tamLetra);
+ax=gca;
+xlim([0 900])
+if max(perturbacoes(2,:))>350
+    ylim([348 360])
+else
+    ylim([340 352])
+end
 ylabel('Temperatura Externa (K)','FontSize',tamLetra)
 xlabel('Iterações (-)','FontSize',tamLetra);
 grid
