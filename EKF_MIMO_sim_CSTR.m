@@ -152,9 +152,9 @@ x_pred_vect(5,:)      = d_estimado(2);
 %---- Parâmetros do Estimador ----   
 %h - nível dentro do tanque (0~2); Ca - Concentração de saída do produto A (1~3); T  - Temperatura dentro do reator (390~410); 
 %qi - Vazão de entrada(0.001~0.007); %Ti - Temperatura externa(350~370);
-h_range=[0 2];       Ca_range=[1 3];           T_range=[390 410];       qi_range=[0.001 0.007];      Ti_range=[350 370];
-h_med = mean(h_range); Ca_med=mean(Ca_range);  T_med=mean(T_range);     qi_med=mean(qi_range);       Ti_med=mean(Ti_range);
-h_dp = abs(h_med-2)/2; Ca_dp = abs(Ca_med-3)/2; T_dp = abs(T_med-410)/2; qi_dp = abs(qi_med-0.007)/2; Ti_dp = abs(Ti_med-370)/2;
+h_range=[0 2];       Ca_range=[1 3];         T_range=[390 410];       qi_range=[0.001 0.007];      Ti_range=[350 370];
+h_med=mean(h_range); Ca_med=mean(Ca_range);  T_med=mean(T_range);     qi_med=mean(qi_range);       Ti_med=mean(Ti_range);
+h_dp=abs(h_med-2)/2; Ca_dp=abs(Ca_med-3)/2;  T_dp=abs(T_med-410)/2;   qi_dp=abs(qi_med-0.007)/2;   Ti_dp=abs(Ti_med-370)/2;
 
 % Q = diag([1*ones(1,na-2),1,1]);               %Variável da ponderação dos estados
 % R = diag(ones(1,m));                          %Variável da ponderação da saída       
@@ -222,7 +222,7 @@ integrador_atual_3 = 0;
 end
 
 %Variável para fechar a malha de controle; 0 = malha aberta; 1 = malha fechada
-controle = 1;
+controle = 0;
 
 %% --------------- Definição das referências ---------------
 if controle == 1 % --- MALHA FECHADA ---
