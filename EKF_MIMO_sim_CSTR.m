@@ -1,6 +1,4 @@
-clear all
-close all
-clc
+clear; %close all; clc
 
 import casadi.*
 x1 = SX.sym('x1');
@@ -14,13 +12,14 @@ u3 = SX.sym('u3');
 qi = SX.sym('qi');
 Ti = SX.sym('Ti');
 
-d = 5;
-delay_real     = [d d d];
-delay_modelado = delay_real+10;
-% delay_modelado = [3 5 3];
-d_max          = max(delay_real);
-dmodelado_max  = max(delay_modelado);
-delay_total    = d_max+dmodelado_max;
+d = 10;                               %Atraso real
+delay_real     = [d d d];             %Vetor de atraso real
+delay_modelado = delay_real;          %Vetor de atraso modelado
+d_max          = max(delay_real);     %Máximo valor do atraso (caso sejam diferentes)
+dmodelado_max  = max(delay_modelado); %Máximo valor do atraso (caso sejam diferentes)
+delay_total    = d_max+dmodelado_max; %Soma dos maiores atrasos para predição
+
+ekf            = 1;                   %Variável usada somente no plot
 %% CSTR MIMO instável
 global Ts Ac dH p cp ER k0 V
 %---- Constantes ----
@@ -174,6 +173,7 @@ P_estimado_at = diag([1*ones(1,na-2),1,1]);
 Q = diag([(h_dp*0.7)^2, (Ca_dp*0.25)^2, (T_dp*0.3)^2, (qi_dp*300)^2, (Ti_dp*0.45)^2]);
 R = diag([((h_dp*8)^2), ((Ca_dp*2)^2), ((T_dp*4)^2)]);
 
+
 %---- Funções CasADi ----
 A_jacobian = jacobian(fun_ax_ext,[x1 x2 x3 qi Ti]);  %Cálculo do jacobiano para matriz A
 B_jacobian = jacobian(fun_ax_ext,[u1 u2 u3]);        %Cálculo do jacobiano para matriz B
@@ -222,7 +222,7 @@ integrador_atual_3 = 0;
 end
 
 %Variável para fechar a malha de controle; 0 = malha aberta; 1 = malha fechada
-controle = 0;
+controle = 1;
 
 %% --------------- Definição das referências ---------------
 if controle == 1 % --- MALHA FECHADA ---
@@ -230,14 +230,14 @@ if controle == 1 % --- MALHA FECHADA ---
 %     ref_h(200:end)     = saidas(1,1)*1.02;          
     ref_ca(100:end)    = saidas(2,1)*1.02;            
 %     ref_T(600:end)     = saidas(3,1)*1.02;
-    perturbacoes(1,200:end)      = q0(1)*0.98;    
+    perturbacoes(1,200:end)      = q0(1)*1.02;    
     perturbacoes(2,400:end)      = q0(2)*0.98;
 
 else % --- MALHA ABERTA ---
-%     entradas(2,600:end) = u0(2)*1.02;               %Degrau na entrada de 2%
-%     entradas(1,200:end) = u0(1)*0.98;             
-%     entradas(3,500:end) = u0(3)*0.98;    
-%     perturbacoes(1,100:end)      = q0(1)*1.02;    
+%     entradas(1,200:end) = u0(1)*1.02;             
+    entradas(2,400:end) = u0(2)*1.02;               %Degrau na entrada de 2%
+%     entradas(3,600:end) = u0(3)*1.02;    
+    perturbacoes(1,100:end)      = q0(1)*1.02;    
 %     perturbacoes(2,700:end)      = q0(2)*1.02;
 end
 
@@ -310,7 +310,7 @@ for k = 2+delay_total:iteracoes
         integrador_atual_3    = integrador_anterior_3 + erro_3;
         integrador_anterior_3 = integrador_atual_3;
       
-        nova_entrada = -K*[x_a_pred(1);x_a_pred(2);x_a_pred(3); integrador_atual_1; integrador_atual_2; integrador_atual_3];
+        nova_entrada = -K*[x_a_pred(1);x_a_pred(2);x_a_pred(3);integrador_atual_1;integrador_atual_2;integrador_atual_3];
         entradas(:,k) = nova_entrada;
     end
     
@@ -322,8 +322,12 @@ for k = 2+delay_total:iteracoes
 end
 
 Elapsed_time = toc;
-disp('Tempo gasto na simulação:');
-disp(Elapsed_time);
+text1 = ['Tempo de simulação: ',num2str(Elapsed_time),' s'];
+disp(text1)
+
+err_1 = RMSE(ref_h,x_pred_vect(1,:),iteracoes);
+err_2 = RMSE(ref_ca,x_pred_vect(2,:),iteracoes);
+err_3 = RMSE(ref_T,x_pred_vect(3,:),iteracoes);
 
 %---- Plot de gráficos ----
 plot_cstrNaoIsotermico
@@ -393,4 +397,7 @@ function[x_estimado,P_prox] = ekfMIMO(x_sistema,y_sistema,y_t,u_t,x_a_estimado,P
     
     %Matriz de inovação
 %     Mx = Aa*L;
+end
+function erro = RMSE(real,predito,N) 
+    erro = (1/N)*((predito-real).^2);
 end

@@ -1,14 +1,20 @@
-%Estados / Variáveis Controladas
-% x1 = h - nível dentro do tanque; 
-% x2 = Ca - Concentração de saída do produto A;
-% x3 = T - Temperatura dentro do reator; 
-% x4 = R - Velocidade de reação?
+if ekf == 0
+    saidas=x;
+end
 tamLetra = 10;
 tamTitulo = 12;
 espes = 3;
 
 h = figure();
 h.WindowState = 'maximized';
+p = get(0,"MonitorPositions");%pega o 2 monitor
+h.Position = p(2,:); %plota no 2 monitor
+%% ------------ Gráfico das saídas ------------
+%Estados / Variáveis Controladas
+% x1 = h - nível dentro do tanque; 
+% x2 = Ca - Concentração de saída do produto A;
+% x3 = T - Temperatura dentro do reator; 
+% x4 = R - Velocidade de reação?
 
 subplot(3,2,1);
 plot(saidas(1,1:iteracoes),'r','linewidth',espes);
@@ -21,7 +27,7 @@ else
    legend({'Real','Predição'},'FontSize',tamLetra); 
 end
 xlim([0 iteracoes])
-ylim([0.92 1.2])
+% ylim([0.92 1.2])
 xlabel('Iterações (-)','FontSize',tamLetra);
 ylabel('Altura (m)','FontSize',tamLetra);
 title('$h$ - Altura do tanque','interpreter','latex','FontSize',tamTitulo)
@@ -39,7 +45,7 @@ else
    legend({'Real','Predição'},'FontSize',tamLetra); 
 end
 xlim([0 iteracoes])
-ylim([0.98 1.08])
+% ylim([0.98 1.08])
 xlabel('Iterações (-)','FontSize',tamLetra);
 ylabel('Concentração (kmol/m^3)','FontSize',tamLetra);
 title('$C_a$ - Concentra\c{c}\~{a}o do produto A','interpreter','latex','FontSize',tamTitulo);
@@ -57,13 +63,13 @@ else
    legend({'Real','Predição'},'FontSize',tamLetra); 
 end
 xlim([0 iteracoes])
-ylim([390 410])
+% ylim([390 410])
 xlabel('Iterações (-)','FontSize',tamLetra);
 ylabel('Temperatura Interna (K)','FontSize',tamLetra);
 title('$T$ - Temperatura dentro do tanque','interpreter','latex','FontSize',tamTitulo);
 grid
 
-
+%% ------------ Gráfico das entradas ------------
 % figure
 %----- Entradas / Variáveis Manipuladas -----
 % u1 = qo - Vazão de saída;
@@ -103,49 +109,60 @@ subplot(3,2,6);
 plot(entradas(3,1:iteracoes),'r','linewidth',espes);
 legend({'${Qh}/{pc_p}$ - Taxa de remo\c{c}\~{a}o de calor normalizada'},'interpreter','latex','Location','best','FontSize',tamLetra);
 xlim([0 iteracoes])
-ylim([0.74 0.8])
+ylim([0.71 0.8])
 xlabel('Iterações (-)','FontSize',tamLetra);
 ylabel({'Taxa de remoção de'; 'calor (Km^3/s^{-1})'},'FontSize',tamLetra)
 grid
 
+if ekf == 0
+    if controle == 0
+        sgtitle('FSP Não-Linear em malha aberta');
+    else 
+        sgtitle('FSP Não-Linear em malha fechada');
+    end
+else
+     if controle == 0
+        sgtitle('O&P com EKF em malha aberta');
+    else 
+        sgtitle('O&P com EKF em malha fechada');
+    end
+end
 
+%% ------------ Gráfico de erros ------------
 h2 = figure();
 h2.WindowState = 'maximized';
-%----- Perturbações ------
-% q = qi - vazao de entrada; 
-% Ti = Ti - Temeratura externa;
-subplot(2,1,1)
-plot(perturbacoes(1,1:iteracoes),'r','linewidth',espes);
-hold on
-plot(x_pred_vect(4,1:iteracoes),'k--','linewidth',espes);
-title('$q_i$ - Vaz\~{a}o de entrada','interpreter','latex','FontSize',tamTitulo);
-legend({'Real','Predição'},'Location','best','FontSize',tamLetra);
-ax=gca;
+h2.Position = p(1,:);
+
+subplot(3,1,1);
+plot(err_1,'r','linewidth',espes);
 xlim([0 iteracoes])
-if max(perturbacoes(1,:))>5e-3
-   ylim([4.9e-3 5.2e-3])
-else
-   ylim([4.8e-3 5.1e-3])
-end
-ax.YAxis.Exponent = -3;
-ylabel('Vazão (m^3/s^{-1})','FontSize',tamLetra)
+% ylim([0.92 1.2])
 xlabel('Iterações (-)','FontSize',tamLetra);
+ylabel('Altura (m)','FontSize',tamLetra);
+title('$h$ - Altura do tanque','interpreter','latex','FontSize',tamTitulo)
 grid
 
 
-subplot(2,1,2);
-plot(perturbacoes(2,1:iteracoes),'r','linewidth',espes);
-hold on
-plot(x_pred_vect(5,1:iteracoes),'k--','linewidth',espes);
-title('$T_i$ - Temperatura externa','interpreter','latex','FontSize',tamTitulo)
-legend({'Real','Predição'},'Location','best','FontSize',tamLetra);
-ax=gca;
+subplot(3,1,2);
+plot(err_2,'r','linewidth',espes);
 xlim([0 iteracoes])
-if max(perturbacoes(2,:))>350
-    ylim([348 360])
-else
-    ylim([340 352])
-end
-ylabel('Temperatura Externa (K)','FontSize',tamLetra)
+% ylim([0.98 1.08])
 xlabel('Iterações (-)','FontSize',tamLetra);
+ylabel('Concentração (kmol/m^3)','FontSize',tamLetra);
+title('$C_a$ - Concentra\c{c}\~{a}o do produto A','interpreter','latex','FontSize',tamTitulo);
 grid
+
+subplot(3,1,3);
+plot(err_3,'r','linewidth',espes);
+xlim([0 iteracoes])
+% ylim([390 410])
+xlabel('Iterações (-)','FontSize',tamLetra);
+ylabel('Temperatura Interna (K)','FontSize',tamLetra);
+title('$T$ - Temperatura dentro do tanque','interpreter','latex','FontSize',tamTitulo);
+grid
+
+if ekf == 0
+    sgtitle('Erro Quadrático Médio FSP Não-Linear');
+else
+    sgtitle('Erro Quadrático Médio O&P com EKF');
+end
