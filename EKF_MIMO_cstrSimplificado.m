@@ -75,7 +75,7 @@ fun_y      = Function('fun_y',{x1,x2,qi,Ti,u1,u2},{fun_yx_ext});
 na = size(fun_ax_ext,1);                      %Dimensão vetor de estados aumentado
 m  = size(fun_yx_ext,1);                      %Dimensão vetor de saídas
 %% --------------- Inicialização das variáveis --------------------
-iteracoes   = 900;
+iteracoes   = 400;
 
 %---- Saídas ----
 saidas       = zeros(2,iteracoes);            %inicia vetor de saídas
@@ -150,8 +150,8 @@ P_estimado_at = diag([1*ones(1,na-2),1,1]);
 % R = diag([((Ca_dp*1.5)^2), ((T_dp*0.9)^2)]);
 
 % Testes
-Q = diag([(Ca_dp*0.25)^2, (T_dp*0.3)^2, (qi_dp*300)^2, (Ti_dp*0.45)^2]);
-R = diag([((Ca_dp*2)^2), ((T_dp*4)^2)]);
+Q = diag([(Ca_dp*0.25)^2, (T_dp*0.3)^2, (qi_dp*200)^2, (Ti_dp*0.6)^2]);
+R = diag([((Ca_dp*1)^2), ((T_dp*4)^2)]);
 
 
 %---- Funções CasADi ----
@@ -203,16 +203,19 @@ controle = 1;
 %% --------------- Definição das referências ---------------
 if controle == 1 % --- MALHA FECHADA ---
     
-    ref_ca(100:end)    = saidas(1,1)*1.02;            
+%     ref_h(200:end)     = saidas(1,1)*1.02;          
+    ref_ca(50:end)    = saidas(1,1)*1.02;
 %     ref_T(600:end)     = saidas(2,1)*1.02;
-    perturbacoes(1,200:end)      = q0(1)*1.02;    
-    perturbacoes(2,400:end)      = q0(2)*0.98;
+    perturbacoes(1,100:end)      = q0(1)*1.02;       %200s
+    perturbacoes(2,200:end)      = q0(2)*1.02;       %400s
 
 else % --- MALHA ABERTA ---
-    entradas(1,400:end) = u0(1)*1.02;               %Degrau na entrada de 2%
-%     entradas(2,600:end) = u0(2)*1.02;    
-    perturbacoes(1,100:end)      = q0(1)*1.02;    
-%     perturbacoes(2,700:end)      = q0(2)*1.02;
+%     entradas(1,200:end) = u0(1)*1.02;             
+    entradas(2,50:end) = u0(2)*1.02;               %100s
+%     entradas(3,600:end) = u0(3)*1.02;    
+    perturbacoes(1,100:end)      = q0(1)*1.02;       %200s
+    perturbacoes(2,200:end)      = q0(2)*1.02;       %400s
+
 end
 
 %% --------------- Simulação --------------------
@@ -291,14 +294,21 @@ Elapsed_time = toc;
 text1 = ['Tempo de simulação: ',num2str(Elapsed_time),' s'];
 disp(text1)
 
-err_1 = RMSE(ref_ca,x_pred_vect(1,:),iteracoes);
-err_2 = RMSE(ref_T,x_pred_vect(2,:),iteracoes);
+% err_MSE_1_ekf = MSE(ref_ca,saidas(1,:),iteracoes);
+% err_MSE_2_ekf = MSE(ref_T,saidas(2,:),iteracoes);
+
+err_RMSE_1_ekf = RMSE(ref_ca,saidas(1,:),iteracoes);
+err_RMSE_2_ekf = RMSE(ref_T,saidas(2,:),iteracoes);
+
+err_MAPE_1_ekf = MAPE(ref_ca,saidas(1,:),iteracoes);
+err_MAPE_2_ekf = MAPE(ref_T,saidas(2,:),iteracoes);
 
 %---- Plot de gráficos ----
 plot_cstr
+plot_erros
 %% Função do modelo
 function x = modeloCSTR_naoIsotermico(estados,entradas) 
-    global Ts Ac dH p cp ER k0 V;
+    global Ts dH p cp ER k0 V;
     
     Rt = (k0*exp(-ER/estados(2)));
     
@@ -340,6 +350,35 @@ function[x_estimado,P_prox] = ekfMIMO(x_sistema,y_sistema,y_t,u_t,x_a_estimado,P
     %Matriz de inovação
 %     Mx = Aa*L;
 end
+function erro = MSE(real,predito,N) 
+    erro = zeros(1,N);
+    erro(1)=((real(1) - predito(1))^2);
+    for i=2:N
+        aux     = (real(i) - predito(i))^2;
+        erro(i) = ((erro(i-1) + aux)); %integral do erro = anterior + atual
+%         erro(i) = (predito(i)-real(i))^2;
+    end    
+    erro = erro/N;
+end
+
 function erro = RMSE(real,predito,N) 
-    erro = (1/N)*((predito-real).^2);
+    erro = zeros(1,N);
+    erro(1)=((real(1) - predito(1))^2);
+    for i=2:N
+        aux     = (real(i) - predito(i))^2;
+        erro(i) = ((erro(i-1) + aux)); %integral do erro = anterior + atual
+%         erro(i) = (predito(i)-real(i))^2;
+    end    
+    erro = sqrt(erro/N);
+end
+
+function erro = MAPE(real,predito,N) 
+    erro = zeros(1,N);
+    erro(1)=((real(1) - predito(1)))/real(1);
+    for i=2:N
+        aux     = ((real(i) - predito(i)))/real(i);
+        erro(i) = ((erro(i-1) + aux)); %integral do erro = anterior + atual
+%         erro(i) = (predito(i)-real(i))^2;
+    end    
+    erro = (erro/N)*100;
 end
