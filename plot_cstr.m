@@ -4,6 +4,8 @@ end
 tamLetra = 10;
 tamTitulo = 12;
 espes = 3;
+global Ts
+segundos = (1:iteracoes)*Ts;
 
 h = figure();
 h.WindowState = 'maximized';
@@ -17,36 +19,38 @@ h.Position = p(2,:); %plota no 2 monitor
 % x4 = R - Velocidade de reação?
 
 subplot(2,2,1);
-plot(saidas(1,1:iteracoes),'r','linewidth',espes);
+plot(segundos,saidas(1,:),'r','linewidth',espes);
 hold on
-plot(x_pred_vect(1,1:iteracoes),'k--','linewidth',espes)%,'marker','x');
+plot(segundos,x_pred_vect(1,:),'k--','linewidth',espes)%,'marker','x');
 if controle==1 
-    plot(ref_ca(1:iteracoes),'b--','linewidth',espes);
+    plot(segundos,ref_ca(:),'b--','linewidth',espes);
     legend({'Real','Predição','Referência'},'FontSize',tamLetra);
 else
    legend({'Real','Predição'},'FontSize',tamLetra); 
 end
-xlim([0 iteracoes])
+xlim([0 segundos(end)])
+xticks(0:200:segundos(end))
 % ylim([0.98 1.08])
-xlabel('Iterações (-)','FontSize',tamLetra);
+xlabel('Tempo (s)','FontSize',tamLetra);
 ylabel('Concentração (kmol/m^3)','FontSize',tamLetra);
 title('$C_a$ - Concentra\c{c}\~{a}o do produto A','interpreter','latex','FontSize',tamTitulo);
 grid
 
 
 subplot(2,2,3);
-plot(saidas(2,1:iteracoes),'r','linewidth',espes);
+plot(segundos,saidas(2,:),'r','linewidth',espes);
 hold on
-plot(x_pred_vect(2,1:iteracoes),'k--','linewidth',espes);
+plot(segundos,x_pred_vect(2,:),'k--','linewidth',espes);
 if controle==1 
-    plot(ref_T(1:iteracoes),'b--','linewidth',espes);
+    plot(segundos,ref_T(:),'b--','linewidth',espes);
     legend({'Real','Predição','Referência'},'FontSize',tamLetra);
 else
    legend({'Real','Predição'},'FontSize',tamLetra); 
 end
-xlim([0 iteracoes])
+xlim([0 segundos(end)])
+xticks(0:200:segundos(end))
 % ylim([390 410])
-xlabel('Iterações (-)','FontSize',tamLetra);
+xlabel('Tempo (s)','FontSize',tamLetra);
 ylabel('Temperatura Interna (K)','FontSize',tamLetra);
 title('$T$ - Temperatura dentro do tanque','interpreter','latex','FontSize',tamTitulo);
 grid
@@ -63,11 +67,12 @@ subplot(2,2,2);
 % plot(entradas_atrasadas_vect(2,1:iteracoes),'k--','linewidth',2);
 % hold on
 % plot(entradas_comp_vect(2,1:iteracoes),'b','linewidth',2);
-plot(entradas(1,1:iteracoes),'r','linewidth',espes);
+plot(segundos,entradas(1,:),'r','linewidth',espes);
 legend({'$C_{af}$ - Concentra\c{c}\~{a}o produto A na alimenta\c{c}\~{a}o do tanque'},'interpreter','latex','Location','best','FontSize',tamLetra);
-xlim([0 iteracoes])
+xlim([0 segundos(end)])
+xticks(0:200:segundos(end))
 ylim([4.9 5.2])
-xlabel('Iterações (-)','FontSize',tamLetra);
+xlabel('Tempo (s)','FontSize',tamLetra);
 ylabel('Concentração (kmol/m^3)','FontSize',tamLetra)
 grid
 
@@ -75,11 +80,12 @@ subplot(2,2,4);
 % plot(entradas_atrasadas_vect(3,1:iteracoes),'k--','linewidth',2);
 % hold on
 % plot(entradas_comp_vect(3,1:iteracoes),'b','linewidth',2);
-plot(entradas(2,1:iteracoes),'r','linewidth',espes);
+plot(segundos,entradas(2,:),'r','linewidth',espes);
 legend({'${Qh}/{pc_p}$ - Taxa de remo\c{c}\~{a}o de calor normalizada'},'interpreter','latex','Location','best','FontSize',tamLetra);
-xlim([0 iteracoes])
-ylim([0.71 0.8])
-xlabel('Iterações (-)','FontSize',tamLetra);
+xlim([0 segundos(end)])
+xticks(0:200:segundos(end))
+ylim([0.71 0.82])
+xlabel('Tempo (s)','FontSize',tamLetra);
 ylabel({'Taxa de remoção de'; 'calor (Km^3/s^{-1})'},'FontSize',tamLetra)
 grid
 
@@ -95,33 +101,4 @@ else
     else 
         sgtitle('O&P com EKF em malha fechada');
     end
-end
-
-%% ------------ Gráfico de erros ------------
-h2 = figure();
-h2.WindowState = 'maximized';
-h2.Position = p(1,:);
-
-subplot(2,1,1);
-plot(err_1,'r','linewidth',espes);
-xlim([0 iteracoes])
-% ylim([0.98 1.08])
-xlabel('Iterações (-)','FontSize',tamLetra);
-ylabel('Concentração (kmol/m^3)','FontSize',tamLetra);
-title('$C_a$ - Concentra\c{c}\~{a}o do produto A','interpreter','latex','FontSize',tamTitulo);
-grid
-
-subplot(2,1,2);
-plot(err_2,'r','linewidth',espes);
-xlim([0 iteracoes])
-% ylim([390 410])
-xlabel('Iterações (-)','FontSize',tamLetra);
-ylabel('Temperatura Interna (K)','FontSize',tamLetra);
-title('$T$ - Temperatura dentro do tanque','interpreter','latex','FontSize',tamTitulo);
-grid
-
-if ekf == 0
-    sgtitle('Erro Quadrático Médio FSP Não-Linear');
-else
-    sgtitle('Erro Quadrático Médio O&P com EKF');
 end
