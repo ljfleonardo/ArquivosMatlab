@@ -131,7 +131,7 @@ end
 %% ------------ Gráfico de erros ------------
 h2 = figure();
 h2.WindowState = 'maximized';
-h2.Position = p(1,:);
+h2.Position = p(2,:);
 
 subplot(3,1,1);
 plot(err_1,'r','linewidth',espes);
