@@ -1,4 +1,4 @@
-clear; %close all; clc
+% clear; %close all; clc
 s = tf('s');
 
 import casadi.*
@@ -77,7 +77,7 @@ fun_y      = Function('fun_y',{x1,x2,qi,Ti,u1,u2},{fun_yx_ext});
 na = size(fun_ax_ext,1);                      %Dimensão vetor de estados aumentado
 m  = size(fun_yx_ext,1);                      %Dimensão vetor de saídas
 %% --------------- Inicialização das variáveis --------------------
-iteracoes   = 900;
+iteracoes   = 400;
 
 %% ---- Saídas ----
 x       = zeros(2,iteracoes);          %inicia vetor de saídas
@@ -168,16 +168,19 @@ controle = 1;
 %% --------------- Definição das referências ---------------
 if controle == 1 % --- MALHA FECHADA ---
     
-    ref_ca(100:end)    = x(1,1)*1.02;            
-%     ref_T(600:end)     = x(2,1)*1.02;
-    perturbacoes(1,200:end)      = q0(1)*1.02;    
-    perturbacoes(2,400:end)      = q0(2)*0.98;
+%     ref_h(200:end)     = saidas(1,1)*1.02;          
+    ref_ca(50:end)    = x(1,1)*1.02;
+%     ref_T(600:end)     = saidas(3,1)*1.02;
+    perturbacoes(1,100:end)      = q0(1)*1.02;       %200s
+    perturbacoes(2,200:end)      = q0(2)*1.02;       %400s
 
 else % --- MALHA ABERTA ---
-    entradas(1,400:end) = u0(1)*1.02;               %Degrau na entrada de 2%
-%     entradas(2,600:end) = u0(2)*1.02;    
-    perturbacoes(1,100:end)      = q0(1)*1.02;    
-%     perturbacoes(2,700:end)      = q0(2)*1.02;
+%     entradas(1,200:end) = u0(1)*1.02;             
+    entradas(2,50:end) = u0(2)*1.02;               %100s
+%     entradas(3,600:end) = u0(3)*1.02;    
+    perturbacoes(1,100:end)      = q0(1)*1.02;       %200s
+    perturbacoes(2,200:end)      = q0(2)*1.02;       %400s
+
 end
 %% --------------- Projeto do Filtro ---------------
 
@@ -185,6 +188,7 @@ z = tf('z',Ts);
 % %melhorar / ver como projetar o filtro
 lambda   = 0.95;
 Fd       = (z*(1-lambda))/((z-lambda));
+%K(z-a)z/(z-b)^2 %b posi. polo a - calculado para cancelar polo lento do sistema no ponto de operação, K para garantir ganho unit.
 den_f    = Fd.den{1,1};
 num_f    = Fd.num{1,1};
 n        = length(den_f(2:end)); %Ordem do filtro
@@ -236,16 +240,23 @@ Elapsed_time = toc;
 text1 = ['Tempo de simulação: ',num2str(Elapsed_time),' s'];
 disp(text1)
 
-err_1 = RMSE(ref_ca,x_pred_vect(1,:),iteracoes);
-err_2 = RMSE(ref_T,x_pred_vect(2,:),iteracoes);
+% err_MSE_1 = MSE(ref_ca,x(1,:),iteracoes);
+% err_MSE_2 = MSE(ref_T,x(2,:),iteracoes);
+
+err_RMSE_1_fsp = RMSE(ref_ca,x(1,:),iteracoes);
+err_RMSE_2_fsp = RMSE(ref_T,x(2,:),iteracoes);
+
+err_MAPE_1_fsp = MAPE(ref_ca,x(1,:),iteracoes);
+err_MAPE_2_fsp = MAPE(ref_T,x(2,:),iteracoes);
 
 % text2 = ['Erro médio quadrático de x1: ',num2str(err)];
 % disp(text2)
 % ---- Plot de gráficos ----
 plot_cstr
+plot_erros
 %% --------------- Função do modelo ---------------
 function x = modeloCSTR_naoIsotermico(estados,entradas,pert) 
-    global Ts Ac dH p cp ER k0 V;
+    global Ts dH p cp ER k0 V;
     
     Rt = (k0*exp(-ER/estados(2)));
     
@@ -253,6 +264,35 @@ function x = modeloCSTR_naoIsotermico(estados,entradas,pert)
     x(2) = estados(2) + Ts*(pert(1)*((pert(2)-estados(2))/V) - (dH/p/cp)*Rt*estados(1) - entradas(2)/V);
     
 end
+function erro = MSE(real,predito,N) 
+    erro = zeros(1,N);
+    erro(1)=((real(1) - predito(1))^2);
+    for i=2:N
+        aux     = (real(i) - predito(i))^2;
+        erro(i) = ((erro(i-1) + aux)); %integral do erro = anterior + atual
+%         erro(i) = (predito(i)-real(i))^2;
+    end    
+    erro = erro/N;
+end
+
 function erro = RMSE(real,predito,N) 
-    erro = (1/N)*((predito-real).^2);
+    erro = zeros(1,N);
+    erro(1)=((real(1) - predito(1))^2);
+    for i=2:N
+        aux     = (real(i) - predito(i))^2;
+        erro(i) = ((erro(i-1) + aux)); %integral do erro = anterior + atual
+%         erro(i) = (predito(i)-real(i))^2;
+    end    
+    erro = sqrt(erro/N);
+end
+
+function erro = MAPE(real,predito,N) 
+    erro = zeros(1,N);
+    erro(1)=((real(1) - predito(1)))/real(1);
+    for i=2:N
+        aux     = ((real(i) - predito(i)))/real(i);
+        erro(i) = ((erro(i-1) + aux)); %integral do erro = anterior + atual
+%         erro(i) = (predito(i)-real(i))^2;
+    end    
+    erro = (erro/N)*100;
 end
