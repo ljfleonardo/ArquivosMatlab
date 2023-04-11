@@ -12,9 +12,9 @@ u3 = SX.sym('u3');
 qi = SX.sym('qi');
 Ti = SX.sym('Ti');
 
-d = 10;                               %Atraso real
+d = 5;                               %Atraso real
 delay_real     = [d d d];             %Vetor de atraso real
-delay_modelado = delay_real;          %Vetor de atraso modelado
+delay_modelado = delay_real+10;          %Vetor de atraso modelado
 d_max          = max(delay_real);     %Máximo valor do atraso (caso sejam diferentes)
 dmodelado_max  = max(delay_modelado); %Máximo valor do atraso (caso sejam diferentes)
 delay_total    = d_max+dmodelado_max; %Soma dos maiores atrasos para predição
@@ -87,7 +87,7 @@ fun_y      = Function('fun_y',{x1,x2,x3,qi,Ti,u1,u2,u3},{fun_yx_ext});
 na = size(fun_ax_ext,1);                      %Dimensão vetor de estados aumentado
 m  = size(fun_yx_ext,1);                      %Dimensão vetor de saídas
 %% --------------- Inicialização das variáveis --------------------
-iteracoes   = 900;
+iteracoes   = round(1200/Ts);
 
 %---- Saídas ----
 saidas       = zeros(3,iteracoes);            %inicia vetor de saídas
@@ -168,10 +168,12 @@ P_estimado_at = diag([1*ones(1,na-2),1,1]);
 
 % Q = diag([h_dp^2, Ca_dp^2, T_dp^2, qi_dp^2, Ti_dp^2]);
 % R = diag([((h_dp*0.9)^2), ((Ca_dp*1.5)^2), ((T_dp*0.9)^2)]);
+% Q = eye(5,5);
+% R = eye(3,3);
 
 % Testes
-Q = diag([(h_dp*0.7)^2, (Ca_dp*0.25)^2, (T_dp*0.3)^2, (qi_dp*300)^2, (Ti_dp*0.45)^2]);
-R = diag([((h_dp*8)^2), ((Ca_dp*2)^2), ((T_dp*4)^2)]);
+Q = diag([(h_dp*0.7)^2, (Ca_dp*0.25)^2, (T_dp*0.3)^2, (qi_dp*200)^2, (Ti_dp*0.6)^2]);
+R = diag([((h_dp*8)^2), ((Ca_dp*1)^2), ((T_dp*4)^2)]);
 
 
 %---- Funções CasADi ----
@@ -228,17 +230,18 @@ controle = 1;
 if controle == 1 % --- MALHA FECHADA ---
     
 %     ref_h(200:end)     = saidas(1,1)*1.02;          
-    ref_ca(100:end)    = saidas(2,1)*1.02;            
+    ref_ca((round(100/Ts)):end)    = saidas(2,1)*1.02;           %100s
 %     ref_T(600:end)     = saidas(3,1)*1.02;
-    perturbacoes(1,200:end)      = q0(1)*1.02;    
-    perturbacoes(2,400:end)      = q0(2)*0.98;
+    perturbacoes(1,(round(200/Ts)):end)      = q0(1)*1.02;       %200s
+    perturbacoes(2,(round(400/Ts)):end)      = q0(2)*1.02;       %400s
 
 else % --- MALHA ABERTA ---
 %     entradas(1,200:end) = u0(1)*1.02;             
-    entradas(2,400:end) = u0(2)*1.02;               %Degrau na entrada de 2%
+    entradas(2,(round(100/Ts)):end) = u0(2)*1.02;               %100s
 %     entradas(3,600:end) = u0(3)*1.02;    
-    perturbacoes(1,100:end)      = q0(1)*1.02;    
-%     perturbacoes(2,700:end)      = q0(2)*1.02;
+    perturbacoes(1,(round(200/Ts)):end)      = q0(1)*1.02;       %200s
+    perturbacoes(2,(round(400/Ts)):end)      = q0(2)*1.02;       %400s
+
 end
 
 %% --------------- Simulação --------------------
@@ -330,7 +333,7 @@ err_2 = RMSE(ref_ca,x_pred_vect(2,:),iteracoes);
 err_3 = RMSE(ref_T,x_pred_vect(3,:),iteracoes);
 
 %---- Plot de gráficos ----
-plot_cstrNaoIsotermico
+% plot_cstrNaoIsotermico
 %% Função do modelo
 
 function dxdt = odefcn(t, estados, entradas)
@@ -372,6 +375,12 @@ function[x_estimado,P_prox] = ekfMIMO(x_sistema,y_sistema,y_t,u_t,x_a_estimado,P
     %Estrutura do filtro de Kalman, perturbação apenas nos estados x1, x2 e x3
     
     G = zeros(size(Aa,1),size(Aa,1));
+%     n = size(Aa,1);
+%     p = size(Ca,1);
+% %     nw = n-p;
+%     zero = zeros(n,p);
+%     I = [zeros(p,n-p); eye(n-p,n-p)];
+%     G1 = [zero I];
     G(end-1,end-1) = 1;
     G(end,end)     = 1;
     
