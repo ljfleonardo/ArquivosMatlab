@@ -129,40 +129,40 @@ else
 end
 
 %% ------------ Gráfico de erros ------------
-h2 = figure();
-h2.WindowState = 'maximized';
-h2.Position = p(2,:);
-
-subplot(3,1,1);
-plot(err_1,'r','linewidth',espes);
-xlim([0 iteracoes])
-% ylim([0.92 1.2])
-xlabel('Iterações (-)','FontSize',tamLetra);
-ylabel('Altura (m)','FontSize',tamLetra);
-title('$h$ - Altura do tanque','interpreter','latex','FontSize',tamTitulo)
-grid
-
-
-subplot(3,1,2);
-plot(err_2,'r','linewidth',espes);
-xlim([0 iteracoes])
-% ylim([0.98 1.08])
-xlabel('Iterações (-)','FontSize',tamLetra);
-ylabel('Concentração (kmol/m^3)','FontSize',tamLetra);
-title('$C_a$ - Concentra\c{c}\~{a}o do produto A','interpreter','latex','FontSize',tamTitulo);
-grid
-
-subplot(3,1,3);
-plot(err_3,'r','linewidth',espes);
-xlim([0 iteracoes])
-% ylim([390 410])
-xlabel('Iterações (-)','FontSize',tamLetra);
-ylabel('Temperatura Interna (K)','FontSize',tamLetra);
-title('$T$ - Temperatura dentro do tanque','interpreter','latex','FontSize',tamTitulo);
-grid
-
-if ekf == 0
-    sgtitle('Erro Quadrático Médio FSP Não-Linear');
-else
-    sgtitle('Erro Quadrático Médio O&P com EKF');
-end
+% h2 = figure();
+% h2.WindowState = 'maximized';
+% h2.Position = p(2,:);
+% 
+% subplot(3,1,1);
+% plot(err_1,'r','linewidth',espes);
+% xlim([0 iteracoes])
+% % ylim([0.92 1.2])
+% xlabel('Iterações (-)','FontSize',tamLetra);
+% ylabel('Altura (m)','FontSize',tamLetra);
+% title('$h$ - Altura do tanque','interpreter','latex','FontSize',tamTitulo)
+% grid
+% 
+% 
+% subplot(3,1,2);
+% plot(err_2,'r','linewidth',espes);
+% xlim([0 iteracoes])
+% % ylim([0.98 1.08])
+% xlabel('Iterações (-)','FontSize',tamLetra);
+% ylabel('Concentração (kmol/m^3)','FontSize',tamLetra);
+% title('$C_a$ - Concentra\c{c}\~{a}o do produto A','interpreter','latex','FontSize',tamTitulo);
+% grid
+% 
+% subplot(3,1,3);
+% plot(err_3,'r','linewidth',espes);
+% xlim([0 iteracoes])
+% % ylim([390 410])
+% xlabel('Iterações (-)','FontSize',tamLetra);
+% ylabel('Temperatura Interna (K)','FontSize',tamLetra);
+% title('$T$ - Temperatura dentro do tanque','interpreter','latex','FontSize',tamTitulo);
+% grid
+% 
+% if ekf == 0
+%     sgtitle('Erro Quadrático Médio FSP Não-Linear');
+% else
+%     sgtitle('Erro Quadrático Médio O&P com EKF');
+% end

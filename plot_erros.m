@@ -3,6 +3,7 @@ tamTitulo = 12;
 espes = 3;
 global Ts
 segundos = (1:iteracoes)*Ts;
+p = get(0,"MonitorPositions");%pega o 2 monitor
 
 %% ------------ Gráfico de erros Erro Quadrático Médio ------------
 bool_MSE = exist ('err_MSE_1_ekf','var');
@@ -60,10 +61,14 @@ if bool_MSE==1
     title('$T$ - Temperatura dentro do tanque','interpreter','latex','FontSize',tamTitulo);
     grid
     
-    if ekf == 0
-        sgtitle('MSE FSP Não-Linear');
-    else
-        sgtitle('MSE O&P com EKF');
+    if exist ('err_MSE_2_ekf','var')&& exist ('err_MSE_2_fsp','var')
+        sgtitle('Comparação MSE EKF e FSP Não-Linear');
+    else if exist ('err_MSE_2_ekf','var') && ~exist ('err_MSE_2_fsp','var')
+            sgtitle('MSE O&P com EKF');
+        else if ~exist ('err_MSE_2_ekf','var') && exist ('err_MSE_2_fsp','var')
+                sgtitle('MSE FSP Não-Linear');
+            end
+        end
     end
 end
 %% ------------ Gráfico de erros Raiz Quadrada do Erro Quadrático Médio  ------------
@@ -123,10 +128,14 @@ if bool_RMSE==1
     title('$T$ - Temperatura dentro do tanque','interpreter','latex','FontSize',tamTitulo);
     grid
     
-    if ekf == 0
-        sgtitle('RMSE FSP Não-Linear');
-    else
-        sgtitle('RMSE O&P com EKF');
+    if exist ('err_RMSE_2_ekf','var')&& exist ('err_RMSE_2_fsp','var')
+        sgtitle('Comparação RMSE EKF e FSP Não-Linear');
+    else if exist ('err_RMSE_2_ekf','var') && ~exist ('err_RMSE_2_fsp','var')
+            sgtitle('RMSE O&P com EKF');
+        else if ~exist ('err_RMSE_2_ekf','var') && exist ('err_RMSE_2_fsp','var')
+                sgtitle('RMSE FSP Não-Linear');
+            end
+        end
     end
 end
 %% ------------ Gráfico de erros Porcentagem Erro Absoluto Médio ------------
@@ -184,9 +193,13 @@ if bool_MAPE==1
     title('$T$ - Temperatura dentro do tanque','interpreter','latex','FontSize',tamTitulo);
     grid
     
-    if ekf == 0
-        sgtitle('MAPE FSP Não-Linear');
-    else
-        sgtitle('MAPE O&P com EKF');
+    if exist ('err_MAPE_2_ekf','var')&& exist ('err_MAPE_2_fsp','var')
+        sgtitle('Comparação MAPE EKF e FSP Não-Linear');
+    else if exist ('err_MAPE_2_ekf','var') && ~exist ('err_MAPE_2_fsp','var')
+            sgtitle('MAPE O&P com EKF');
+        else if ~exist ('err_MAPE_2_ekf','var') && exist ('err_MAPE_2_fsp','var')
+                sgtitle('MAPE FSP Não-Linear');
+            end
+        end
     end
 end

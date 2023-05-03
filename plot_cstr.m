@@ -1,6 +1,3 @@
-if ekf == 0
-    saidas=x;
-end
 tamLetra = 10;
 tamTitulo = 12;
 espes = 3;
@@ -29,7 +26,7 @@ else
    legend({'Real','Predição'},'FontSize',tamLetra); 
 end
 xlim([0 segundos(end)])
-xticks(0:200:segundos(end))
+xticks(0:150:segundos(end))
 % ylim([0.98 1.08])
 xlabel('Tempo (s)','FontSize',tamLetra);
 ylabel('Concentração (kmol/m^3)','FontSize',tamLetra);
@@ -48,7 +45,7 @@ else
    legend({'Real','Predição'},'FontSize',tamLetra); 
 end
 xlim([0 segundos(end)])
-xticks(0:200:segundos(end))
+xticks(0:150:segundos(end))
 % ylim([390 410])
 xlabel('Tempo (s)','FontSize',tamLetra);
 ylabel('Temperatura Interna (K)','FontSize',tamLetra);
@@ -68,10 +65,10 @@ subplot(2,2,2);
 % hold on
 % plot(entradas_comp_vect(2,1:iteracoes),'b','linewidth',2);
 plot(segundos,entradas(1,:),'r','linewidth',espes);
-legend({'$C_{af}$ - Concentra\c{c}\~{a}o produto A na alimenta\c{c}\~{a}o do tanque'},'interpreter','latex','Location','best','FontSize',tamLetra);
+legend(['$C_{af}$ - Concentra\c{c}\~{a}o produto A' newline 'na alimenta\c{c}\~{a}o do tanque'],'interpreter','latex','Location','best','FontSize',tamLetra);
 xlim([0 segundos(end)])
-xticks(0:200:segundos(end))
-ylim([4.9 5.2])
+xticks(0:150:segundos(end))
+% ylim([4.9 5.2])
 xlabel('Tempo (s)','FontSize',tamLetra);
 ylabel('Concentração (kmol/m^3)','FontSize',tamLetra)
 grid
@@ -81,19 +78,24 @@ subplot(2,2,4);
 % hold on
 % plot(entradas_comp_vect(3,1:iteracoes),'b','linewidth',2);
 plot(segundos,entradas(2,:),'r','linewidth',espes);
-legend({'${Qh}/{pc_p}$ - Taxa de remo\c{c}\~{a}o de calor normalizada'},'interpreter','latex','Location','best','FontSize',tamLetra);
+legend(['${Qh}/{pc_p}$ - Taxa de remo\c{c}\~{a}o' newline 'de calor normalizada'],'interpreter','latex','Location','best','FontSize',tamLetra);
 xlim([0 segundos(end)])
-xticks(0:200:segundos(end))
-ylim([0.71 0.82])
+xticks(0:150:segundos(end))
+% ylim([0.71 0.82])
 xlabel('Tempo (s)','FontSize',tamLetra);
 ylabel({'Taxa de remoção de'; 'calor (Km^3/s^{-1})'},'FontSize',tamLetra)
 grid
 
 if ekf == 0
     if controle == 0
-        sgtitle('FSP Não-Linear em malha aberta');
+%         if f==1
+        sg_1 = sprintf('FSP Nao-Linear em malha aberta');
+        sg_2 = sprintf('$$ F_r = %s $$ ', tf_title);
+        sgtitle({sg_1,sg_2},'interpreter','latex')
     else 
-        sgtitle('FSP Não-Linear em malha fechada');
+        sg_1 = sprintf('FSP Nao-Linear em malha fechada');
+        sg_2 = sprintf('$$ F_r = %s $$ ', tf_title);
+        sgtitle({sg_1,sg_2},'interpreter','latex')
     end
 else
      if controle == 0
