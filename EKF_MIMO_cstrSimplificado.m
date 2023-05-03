@@ -1,5 +1,5 @@
-clear; close all; clc
-
+clear; %close all; clc
+clc
 import casadi.*
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');
@@ -32,10 +32,8 @@ Ts = 3;           %Período de amostragem
 
 %---- Ponto de Operação ----
 %Entradas / Variáveis Manipuladas
-% u1 = q0     - Vazão de saída;
-% u2 = Caf    - Concentração do produto A na alimentação do tanque; 
-% u3 = Qh/pCp - taxa de remoção de calor normalizada;
-% qo0  = 5e-3;
+% u1 = Caf    - Concentração do produto A na alimentação do tanque; 
+% u2 = Qh/pCp - taxa de remoção de calor normalizada;
 Caf0 = 5;
 Qh0  = 0.75;
 
@@ -51,10 +49,8 @@ q0  = [qi0; Ti0];
 
 % Saídas
 %Estados / Variáveis Controladas
-% x1 = h - nível dentro do tanque; 
-% x2 = Ca - Concentração de saída do produto A;
-% x3 = T  - Temperatura dentro do reator; 
-% h0  = 1;
+% x1 = Ca - Concentração de saída do produto A;
+% x2 = T  - Temperatura dentro do reator; 
 Ca0 = 1;
 T0 = 400;
 
@@ -150,9 +146,11 @@ P_estimado_at = diag([1*ones(1,na-2),1,1]);
 % R = diag([((Ca_dp*1.5)^2), ((T_dp*0.9)^2)]);
 
 % Testes
-Q = diag([(Ca_dp*0.25)^2, (T_dp*0.3)^2, (qi_dp*200)^2, (Ti_dp*0.6)^2]);
-R = diag([((Ca_dp*1)^2), ((T_dp*4)^2)]);
+Q = diag([(Ca_dp*0.25)^2, (T_dp*0.3)^2, (qi_dp*1e5)^2, (Ti_dp*1e2)^2]);
+R = diag([((Ca_dp*1e2)^2), ((T_dp*1e-1)^2)]);
 
+% Q = eye(4,4);
+% R = eye(2,2);
 
 %---- Funções CasADi ----
 A_jacobian = jacobian(fun_ax_ext,[x1 x2 qi Ti]);  %Cálculo do jacobiano para matriz A
@@ -168,6 +166,17 @@ for lqr=1
 Aa = full(fun_a(saidas(1,1),saidas(2,1),perturbacoes(1,1),perturbacoes(2,1),entradas(1,1),entradas(2,1)));
 Ba = full(fun_b(saidas(1,1),saidas(2,1),perturbacoes(1,1),perturbacoes(2,1),entradas(1,1),entradas(2,1)));
 Ca = full(fun_c(saidas(1,1),saidas(2,1),perturbacoes(1,1),perturbacoes(2,1),entradas(1,1),entradas(2,1)));
+
+Ob = obsv(Aa,Ca);
+rank(Ob);
+if rank(Ob)==size(Ob,2)
+    text1 = ['É observável, posto ',num2str(rank(Ob))];
+    disp(text1)
+else
+    text1 = ['NÃO é observável, posto ',num2str(rank(Ob)),' e Ob tem tamanho ',num2str(size(Ob,1))];
+    disp(text1)
+end
+
 Aa_x = Aa(1:na-2,1:2);
 Ba_x = Ba(1:na-2,1:2);
 Ca_x = Ca(1:na-2,1:2);
@@ -196,25 +205,26 @@ integrador_anterior_2 = integrador_anterior(2);
 integrador_atual_2    = 0;
 % end
 end
-
 %Variável para fechar a malha de controle; 0 = malha aberta; 1 = malha fechada
 controle = 1;
 
 %% --------------- Definição das referências ---------------
 if controle == 1 % --- MALHA FECHADA ---
     
-%     ref_h(200:end)     = saidas(1,1)*1.02;          
-    ref_ca(50:end)    = saidas(1,1)*1.02;
-%     ref_T(600:end)     = saidas(2,1)*1.02;
-    perturbacoes(1,100:end)      = q0(1)*1.02;       %200s
-    perturbacoes(2,200:end)      = q0(2)*1.02;       %400s
+    ref_ca((round(50/Ts)):end)               = saidas(1,1)*1.6;
+%     ref_T((round(100/Ts)):end)               = saidas(1,1)*1.1;
+%     ref_ca((round(100/Ts)):end)                = saidas(1,1)*1.02;
+%     perturbacoes(1,(round(400/Ts)):end)       = q0(1)*1.02;       %200s
+%     perturbacoes(2,(round(700/Ts)):end)       = q0(2)*1.02;       %400s
+    perturbacoes(1,(round(450/Ts)):end)       = q0(1)*1.2;       %200s
+    perturbacoes(2,(round(750/Ts)):end)       = q0(2)*1.1;       %400s
+ 
 
 else % --- MALHA ABERTA ---
-%     entradas(1,200:end) = u0(1)*1.02;             
-    entradas(2,50:end) = u0(2)*1.02;               %100s
-%     entradas(3,600:end) = u0(3)*1.02;    
-    perturbacoes(1,100:end)      = q0(1)*1.02;       %200s
-    perturbacoes(2,200:end)      = q0(2)*1.02;       %400s
+    entradas(1,(round(100/Ts)):end)           = u0(1)*1.1;             
+%     entradas(2,(round(250/Ts)):end)           = u0(2)*1.02;       %100s
+    perturbacoes(1,(round(400/Ts)):end)       = q0(1)*1.02;       %200s
+    perturbacoes(2,(round(700/Ts)):end)      = q0(2)*1.02;       %400s
 
 end
 
@@ -234,7 +244,10 @@ for k = 2+delay_total:iteracoes
 %     entrada_atrasada_real_ruido = entrada_atrasada_real + ruido(k);
     
     %---- Simulação do processo ----
-    saidas(:,k) = modeloCSTR_naoIsotermico(xd,entrada_atrasada_real);
+%     saidas(:,k) = modeloCSTR_naoIsotermico(xd,entrada_atrasada_real);
+    tspan = [0 Ts];
+    [t, xfun] = ode45(@(t,x) odefcn(t, x, entrada_atrasada_real), tspan, xd);    
+    saidas(:,k) = xfun(end,1:2)';
 
     %---- Linearização a cada iteração para EKF ----
     Aa = full(fun_a(x_a_estim(1),x_a_estim(2),x_a_estim(3),x_a_estim(4),...
@@ -293,20 +306,25 @@ end
 Elapsed_time = toc;
 text1 = ['Tempo de simulação: ',num2str(Elapsed_time),' s'];
 disp(text1)
+%% --------------- Cálculo de erro --------------------
 
-% err_MSE_1_ekf = MSE(ref_ca,saidas(1,:),iteracoes);
-% err_MSE_2_ekf = MSE(ref_T,saidas(2,:),iteracoes);
+err_MSE_1_ekf = MSE(ref_ca,saidas(1,:),iteracoes);
+err_MSE_2_ekf = MSE(ref_T,saidas(2,:),iteracoes);
+
+text2 = ['MSE EKF C_a: ',num2str(err_MSE_1_ekf(end)),newline,'MSE EKF T: ',num2str(err_MSE_2_ekf(end)) ];
+disp(text2)
+
 
 err_RMSE_1_ekf = RMSE(ref_ca,saidas(1,:),iteracoes);
 err_RMSE_2_ekf = RMSE(ref_T,saidas(2,:),iteracoes);
 
-err_MAPE_1_ekf = MAPE(ref_ca,saidas(1,:),iteracoes);
-err_MAPE_2_ekf = MAPE(ref_T,saidas(2,:),iteracoes);
+% err_MAPE_1_ekf = MAPE(ref_ca,saidas(1,:),iteracoes);
+% err_MAPE_2_ekf = MAPE(ref_T,saidas(2,:),iteracoes);
 
-%---- Plot de gráficos ----
+%% --------------- Plot de Gráficos --------------------
 plot_cstr
-plot_erros
-%% Função do modelo
+% plot_erros
+%% --------------- Função do modelo ---------------
 function x = modeloCSTR_naoIsotermico(estados,entradas) 
     global Ts dH p cp ER k0 V;
     
@@ -317,8 +335,20 @@ function x = modeloCSTR_naoIsotermico(estados,entradas)
     
 end
 
-%% Função ekf MIMO
+function dxdt = odefcn(t, estados, entradas)
+    global dH p cp ER k0 V;
+    
+    Rt = (k0*exp(-ER/estados(2)));
 
+    dxdt = zeros(4,1);
+    dxdt(1) = (estados(3)*((entradas(1)-estados(1))/V) - Rt*estados(1));
+    dxdt(2) = (estados(3)*((estados(4)-estados(2))/V) - (dH/p/cp)*Rt*estados(1) - entradas(2)/V);
+%     dxdt(3) = (estados(4)*((estados(5)-estados(3))/V) - (dH/p/cp)*Rt*estados(2) - entradas(3)/V);
+    dxdt(3) = 0;
+    dxdt(4) = 0;
+end
+
+%% --------------- Função EKF ---------------
 function[x_estimado,P_prox] = ekfMIMO(x_sistema,y_sistema,y_t,u_t,x_a_estimado,P_estimado,Aa,Ca,Q,R)
 
     %Estrutura do filtro de Kalman, perturbação apenas nos estados x1, x2 e x3
@@ -350,6 +380,7 @@ function[x_estimado,P_prox] = ekfMIMO(x_sistema,y_sistema,y_t,u_t,x_a_estimado,P
     %Matriz de inovação
 %     Mx = Aa*L;
 end
+%% --------------- Função erro MSE ---------------
 function erro = MSE(real,predito,N) 
     erro = zeros(1,N);
     erro(1)=((real(1) - predito(1))^2);
@@ -358,27 +389,25 @@ function erro = MSE(real,predito,N)
         erro(i) = ((erro(i-1) + aux)); %integral do erro = anterior + atual
 %         erro(i) = (predito(i)-real(i))^2;
     end    
-    erro = erro/N;
+%     erro = erro/N;
 end
-
-function erro = RMSE(real,predito,N) 
+%% --------------- Função erro RMSE ---------------
+function erro = RMSE(real,predito,N)  %erro na mesma unidade da variável
     erro = zeros(1,N);
     erro(1)=((real(1) - predito(1))^2);
     for i=2:N
         aux     = (real(i) - predito(i))^2;
         erro(i) = ((erro(i-1) + aux)); %integral do erro = anterior + atual
-%         erro(i) = (predito(i)-real(i))^2;
     end    
     erro = sqrt(erro/N);
 end
-
-function erro = MAPE(real,predito,N) 
+%% --------------- Função erro MAPE ---------------
+function erro = MAPE(real,predito,N)  %erro em porcentagem
     erro = zeros(1,N);
     erro(1)=((real(1) - predito(1)))/real(1);
     for i=2:N
         aux     = ((real(i) - predito(i)))/real(i);
         erro(i) = ((erro(i-1) + aux)); %integral do erro = anterior + atual
-%         erro(i) = (predito(i)-real(i))^2;
     end    
-    erro = (erro/N)*100;
+    erro = (erro/N);
 end
