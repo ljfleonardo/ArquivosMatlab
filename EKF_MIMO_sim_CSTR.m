@@ -12,9 +12,9 @@ u3 = SX.sym('u3');
 qi = SX.sym('qi');
 Ti = SX.sym('Ti');
 
-d = 5;                               %Atraso real
+d = 5;                                %Atraso real
 delay_real     = [d d d];             %Vetor de atraso real
-delay_modelado = delay_real+10;          %Vetor de atraso modelado
+delay_modelado = delay_real;          %Vetor de atraso modelado
 d_max          = max(delay_real);     %Máximo valor do atraso (caso sejam diferentes)
 dmodelado_max  = max(delay_modelado); %Máximo valor do atraso (caso sejam diferentes)
 delay_total    = d_max+dmodelado_max; %Soma dos maiores atrasos para predição
@@ -167,14 +167,16 @@ P_estimado_at = diag([1*ones(1,na-2),1,1]);
 % d2_norm = (x_pred_vect(5,1) - Ti_med)/Ti_dp;
 
 % Q = diag([h_dp^2, Ca_dp^2, T_dp^2, qi_dp^2, Ti_dp^2]);
-% R = diag([((h_dp*0.9)^2), ((Ca_dp*1.5)^2), ((T_dp*0.9)^2)]);
-% Q = eye(5,5);
-% R = eye(3,3);
+% R = diag([((h_dp)^2), ((Ca_dp)^2), ((T_dp)^2)]);
+Q = eye(2,2);
+R = eye(3,3);
 
 % Testes
-Q = diag([(h_dp*0.7)^2, (Ca_dp*0.25)^2, (T_dp*0.3)^2, (qi_dp*200)^2, (Ti_dp*0.6)^2]);
-R = diag([((h_dp*8)^2), ((Ca_dp*1)^2), ((T_dp*4)^2)]);
 
+% Q = diag([qi_dp^2, Ti_dp^2]);
+% R = diag([((h_dp)^2), ((Ca_dp)^2), ((T_dp)^2)]);
+% Q = diag([(qi_dp*1e-2)^2, (Ti_dp*0.6)^2]);
+% R = diag([((h_dp*1)^2), ((Ca_dp*1e2)^2), ((T_dp*2e1)^2)]);
 
 %---- Funções CasADi ----
 A_jacobian = jacobian(fun_ax_ext,[x1 x2 x3 qi Ti]);  %Cálculo do jacobiano para matriz A
@@ -224,20 +226,23 @@ integrador_atual_3 = 0;
 end
 
 %Variável para fechar a malha de controle; 0 = malha aberta; 1 = malha fechada
-controle = 1;
+controle = 0;
 
 %% --------------- Definição das referências ---------------
 if controle == 1 % --- MALHA FECHADA ---
-    
+    text1 = 'Sistema em malha fechada';
+    disp(text1)
 %     ref_h(200:end)     = saidas(1,1)*1.02;          
-    ref_ca((round(100/Ts)):end)    = saidas(2,1)*1.02;           %100s
+    ref_ca((round(100/Ts)):end)              = saidas(2,1)*1.02; %100s
 %     ref_T(600:end)     = saidas(3,1)*1.02;
     perturbacoes(1,(round(200/Ts)):end)      = q0(1)*1.02;       %200s
     perturbacoes(2,(round(400/Ts)):end)      = q0(2)*1.02;       %400s
 
 else % --- MALHA ABERTA ---
+    text1 = 'Sistema em malha aberta';
+    disp(text1)
 %     entradas(1,200:end) = u0(1)*1.02;             
-    entradas(2,(round(100/Ts)):end) = u0(2)*1.02;               %100s
+    entradas(2,(round(100/Ts)):end)          = u0(2)*1.02;       %100s
 %     entradas(3,600:end) = u0(3)*1.02;    
     perturbacoes(1,(round(200/Ts)):end)      = q0(1)*1.02;       %200s
     perturbacoes(2,(round(400/Ts)):end)      = q0(2)*1.02;       %400s
@@ -328,12 +333,12 @@ Elapsed_time = toc;
 text1 = ['Tempo de simulação: ',num2str(Elapsed_time),' s'];
 disp(text1)
 
-err_1 = RMSE(ref_h,x_pred_vect(1,:),iteracoes);
-err_2 = RMSE(ref_ca,x_pred_vect(2,:),iteracoes);
-err_3 = RMSE(ref_T,x_pred_vect(3,:),iteracoes);
+% err_1 = RMSE(ref_h,x_pred_vect(1,:),iteracoes);
+% err_2 = RMSE(ref_ca,x_pred_vect(2,:),iteracoes);
+% err_3 = RMSE(ref_T,x_pred_vect(3,:),iteracoes);
 
 %---- Plot de gráficos ----
-% plot_cstrNaoIsotermico
+plot_cstrNaoIsotermico
 %% Função do modelo
 
 function dxdt = odefcn(t, estados, entradas)
@@ -374,7 +379,7 @@ function[x_estimado,P_prox] = ekfMIMO(x_sistema,y_sistema,y_t,u_t,x_a_estimado,P
 
     %Estrutura do filtro de Kalman, perturbação apenas nos estados x1, x2 e x3
     
-    G = zeros(size(Aa,1),size(Aa,1));
+    G = zeros(size(Aa,1),2);
 %     n = size(Aa,1);
 %     p = size(Ca,1);
 % %     nw = n-p;
